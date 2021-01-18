@@ -27,12 +27,26 @@ string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
 string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 
 hunter_add_package(GTest)
+hunter_add_package(Boost COMPONENTS log thread filesystem date_time program_options)
+hunter_add_package(rocksdb)
+hunter_add_package(gflags)
 find_package(GTest CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED log thread filesystem date_time program_options)
+find_package(RocksDB CONFIG REQUIRED)
+find_package(gflags CONFIG REQUIRED)
+
+
+add_library(thread_pool INTERFACE)
+target_sources(thread_pool INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/ThreadPool.h)
+
+add_library(picosha INTERFACE)
+target_sources(picosha INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/picosha2.h)
 
 add_library(${PROJECT_NAME} STATIC
   # enum your files and delete this comment
   ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
 )
+
 
 add_executable(demo
   ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
@@ -43,7 +57,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(demo ${PROJECT_NAME})
+
+
+target_link_libraries(demo PUBLIC ${PROJECT_NAME} Boost::log Boost::thread
+        Boost::filesystem Boost::date_time Boost::program_options
+        RocksDB::rocksdb gflags thread_pool picosha
+        )
 
 if(BUILD_TESTS)
   add_executable(tests
